@@ -18,7 +18,7 @@ def alpha(A, P, D):
 
     Returns
     -------
-        alpha, alpha_norm: (num_states, num_obs) la chaine alpha
+        alpha: (num_states, num_obs) la chaine alpha
     """
     # Get the number of possible states
     num_states, _ = A.shape
@@ -32,7 +32,6 @@ def alpha(A, P, D):
     print "states of max %d observation" % max_length
 
     alpha = np.zeros((num_obs, num_states))
-    alpha_norm = np.zeros((num_obs, 1))
     for t in range(num_obs):
         if t == 0:
             # First element: we need to initialize the chain.
@@ -43,14 +42,11 @@ def alpha(A, P, D):
                     if t - d - 1 < 0:
                         print " for t %d, breaking at d: %d" % (t, d)
                         break
-                    alpha[t, i] += P[t - d:t, i].prod() * D[i, d] * \
+                    alpha[t, i] += P[t - d - 1:t, i].prod() * D[i, d] * \
                                         (A[:, i] * alpha[t - d - 1, :]).sum()
-            alpha_norm[t] = alpha[t, :].sum()
-            alpha[t, :] /= alpha_norm[t]
-    return alpha, alpha_norm
+    return alpha
 
-
-def beta(A, P, D, alpha_norm, verbose=False):
+def beta(A, P, D, verbose=False):
     """
     Beta computation
 
@@ -85,7 +81,6 @@ def beta(A, P, D, alpha_norm, verbose=False):
 
     beta = np.zeros((num_obs, num_states)).astype(float)
     for iteration, t in enumerate(range(num_obs - 1, 0, -1)):
-        print "at iteration", t
         if iteration == 0:
             print "Initialising betas"
             beta[t] += 1.
@@ -97,8 +92,6 @@ def beta(A, P, D, alpha_norm, verbose=False):
                         if t + d + 1 > num_obs - 1:
                             break
                         b += D[j, d] * beta[t + d + 1, j] * \
-                                P[t + 1:t + d + 1, j].prod()
-                    beta[t, i] += P[i, j] * b
-                # Normalising using the alpha_norm
-                beta[t, :] /= alpha_norm[t]
+                                P[t + 1:t + d + 2, j].prod()
+                    beta[t, i] += A[i, j] * b
     return beta
