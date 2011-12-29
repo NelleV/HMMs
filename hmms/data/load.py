@@ -5,8 +5,15 @@ def load_letters():
     letters = []
     # n missing
     for letter in 'abcdefghijklmopqrst':
-        letters.append(imread('letters/%s.png' % letter).mean(axis=2))
+        letters.append(
+            imread('hmms/data/letters/%s.png' % letter).mean(axis=2))
     return letters
+
+
+def load_texts():
+    text = open('hmms/data/texts/01.txt', 'r')
+    for line in text.readlines():
+        yield line
 
 
 def letters_stats(letters):
