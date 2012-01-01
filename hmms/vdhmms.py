@@ -40,7 +40,7 @@ def alpha(A, P, D, p_init=None, verbose=False):
             for d in range(max_length):
                 if not len(P[t - d:t + 1]):
                     continue
-                if t - d  - 1 < 0:
+                if t - d - 1 < 0:
                     alpha[t, i] += P[t - d:t + 1, i].prod() * D[i, d] * \
                                     p_init[i]
                 else:
@@ -77,13 +77,13 @@ def beta(A, P, D, p_init=None, verbose=False):
     _, max_length = D.shape
     # Number of observations (ie, length of the chain)
     num_obs, _ = P.shape
-
-    print "running beta computation on %d observation for %d" % (num_obs,
-                                                                 num_states)
-    print "states of max %d observation" % max_length
+    if verbose:
+        print "running beta computation on %d observation for %d" % (num_obs,
+                                                                    num_states)
+        print "states of max %d observation" % max_length
 
     beta = np.zeros((num_obs, num_states)).astype(float)
-    for iteration, t in enumerate(range(num_obs - 1, 0, -1)):
+    for iteration, t in enumerate(range(num_obs - 1, -1, -1)):
         if iteration == 0:
             print "Initialising betas"
             if p_init is not None:
@@ -95,9 +95,9 @@ def beta(A, P, D, p_init=None, verbose=False):
                 for j in range(num_states):
                     b = 0
                     for d in range(max_length):
-                        if t + d + 1 > num_obs - 1:
-                            break
-                        b += D[j, d] * beta[t + d + 1, j] * \
+                        if len(P[t + 1:t + d + 2, j]) and \
+                            t + d + 1 < len(beta):
+                            b += D[j, d] * beta[t + d + 1, j] * \
                                 P[t + 1:t + d + 2, j].prod()
                     beta[t, i] += A[i, j] * b
     return beta
