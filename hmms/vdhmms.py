@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def alpha(A, P, D):
+def alpha(A, P, D, p_init=None, verbose=False):
     """
     Alpha computation
 
@@ -16,6 +16,9 @@ def alpha(A, P, D):
 
         D: ndarray, probabilite d'emettre d observations sachant l'etat i
 
+        p_init: initial probabilities, default
+            if provided, sets the default probabilities
+
     Returns
     -------
         alpha: (num_states, num_obs) la chaine alpha
@@ -26,27 +29,27 @@ def alpha(A, P, D):
     _, max_length = D.shape
     # Number of observations (ie, length of the chain)
     num_obs, _ = P.shape
-
-    print "running alpha computation on %d observation for %d" % (num_obs,
+    if verbose:
+        print "running alpha computation on %d observation for %d" % (num_obs,
                                                                   num_states)
-    print "states of max %d observation" % max_length
+        print "states of max %d observation" % max_length
 
     alpha = np.zeros((num_obs, num_states))
     for t in range(num_obs):
-        if t == 0:
-            # First element: we need to initialize the chain.
-            alpha[0, :] = P[0, :]
-        else:
-            for i in range(num_states):
-                for d in range(max_length):
-                    if t - d - 1 < 0:
-                        print " for t %d, breaking at d: %d" % (t, d)
-                        break
-                    alpha[t, i] += P[t - d - 1:t, i].prod() * D[i, d] * \
-                                        (A[:, i] * alpha[t - d - 1, :]).sum()
+        for i in range(num_states):
+            for d in range(max_length):
+                if not len(P[t - d:t + 1]):
+                    continue
+                if t - d  - 1 < 0:
+                    alpha[t, i] += P[t - d:t + 1, i].prod() * D[i, d] * \
+                                    p_init[i]
+                else:
+                    alpha[t, i] += P[t - d:t + 1, i].prod() * D[i, d] * \
+                                    (A[:, i] * alpha[t - d - 1, :]).sum()
     return alpha
 
-def beta(A, P, D, verbose=False):
+
+def beta(A, P, D, p_init=None, verbose=False):
     """
     Beta computation
 
@@ -83,7 +86,10 @@ def beta(A, P, D, verbose=False):
     for iteration, t in enumerate(range(num_obs - 1, 0, -1)):
         if iteration == 0:
             print "Initialising betas"
-            beta[t] += 1.
+            if p_init is not None:
+                beta[t] = p_init * P[t, :]
+            else:
+                beta[t] += 1.
         else:
             for i in range(num_states):
                 for j in range(num_states):
